@@ -71,8 +71,10 @@ class MySQLSource {
           if (error) throw new Error(error)
 
           /* Find relationship fields */
+          let hasIdField = false
           for (const f in fields) {
             const field = fields[f].name
+            hasIdField = field === 'id' || hasIdField
             const matches = field.match(/^(.+)_id$/)
             if (matches && matches.length) {
               rels.push({
@@ -82,6 +84,8 @@ class MySQLSource {
               })
             }
           }
+
+          if (!hasIdField) throw new Error('Rows must have id field')
 
           resolve(results)
         })
@@ -108,8 +112,7 @@ class MySQLSource {
       }
 
       return Promise.all(rows.map(row => {
-        if (!row.id) throw new Error('Rows must have id field')
-
+        row.id = makeUid(`${Q.name}–${row.id}`)
         row.path = PathFn(slugify, row, parentRow)
 
         if (this.paths[row.path]) {
@@ -144,7 +147,7 @@ class MySQLSource {
 
         /* Check for relationships */
         rels.forEach(rel => {
-          row[rel.name] = createReference(rel.type, row[rel.field])
+          row[rel.name] = createReference(rel.type, makeUid(`${rel.type}–${row[rel.field]}`))
         })
 
         cType.addNode(row)
