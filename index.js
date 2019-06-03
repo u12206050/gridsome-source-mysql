@@ -3,6 +3,11 @@ const file = require('./file.js')
 
 const ISDEV = process.env.NODE_ENV === 'development'
 
+/* Capitalize string */
+function capitalize(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1)
+}
+
 class MySQLSource {
   static defaultOptions () {
     return {
@@ -56,6 +61,8 @@ class MySQLSource {
         typeName: Q.name
       })
 
+      Q.name = capitalize(Q.name)
+
       const rels = []
 
       const rows = await new Promise((resolve, reject) => {
@@ -70,7 +77,7 @@ class MySQLSource {
             console.log(matches)
             if (matches && matches.length === 1) {
               rels.push({
-                name: matches[0],
+                name: capitalize(matches[0]),
                 field
               })
             }
