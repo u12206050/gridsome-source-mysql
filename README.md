@@ -1,5 +1,3 @@
-** IN ACTIVE DEVELOPMENT **
-
 # Gridsome source MySQL
 
 Gridsome Source Plugin to load data directly from MySQL Database
@@ -46,7 +44,7 @@ module.exports = {
         imageDirectory: 'sql_images',
         queries: [
           {
-            name: 'author',
+            name: 'Author',
             path: {
               prefix: '/authors',
               field: 'fullname'
@@ -55,12 +53,11 @@ module.exports = {
             images: ['avatar'] // Default []
           },
           {
-            name: 'post',
-            path: '/:title',
-            sql: `SELECT id, title, image, author as author_id, excerpt, body, created FROM post WHERE published = 1 LIMIT ?`,
-            args: [10],
-            images: ['avatar']
-            subs: []
+            name: 'Post',
+            path: 'title',
+            sql: `SELECT id, title, image, author as author_id, excerpt, body, created FROM post WHERE published = ?`,
+            args: [1],
+            images: ['image']
           }
         ]
       }
@@ -70,3 +67,44 @@ module.exports = {
 ```
 
 Relationship ids should be in the format of `xxx_id` where `xxx` is the name of another query
+
+## Usage
+
+On the above example two content types will be created `Post` and `Author` with `author_id` being a relation:
+
+```
+query {
+  allPost {
+    edges {
+      node {
+        title
+        path
+        image
+        excerpt
+        author {
+          fullname
+          url
+          avatar (width: 100, height: 100)
+        }
+      }
+    }
+  }
+}
+```
+
+## Definitions
+
+### Query
+
+Field | Type | Info
+---|---|---
+name | string | Name of the resulting content type
+path | function(slugify, row, parentRow?): string | Return the path for the given row
+path | { prefix?: string, field: string, suffix?: string } | Field should exist on each row and will be slugified
+path | string | Name of a field on each row to slugify and use as path
+sql | string | A SQL Query with optional placeholders `?` which will be replaced by args in order
+args? | array<string> | Simple array of static values
+args? | function(parentRow?): array<string> | Return array of values based on data from the parentRow or dynamic calculated data, eg. [Date.now()]
+images? | array<string> | Names of fields on rows that contain urls of images to download and optimize via Gridsome
+subs | array<Query> | Array of Query to execute per result of the current query
+
