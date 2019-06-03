@@ -1,0 +1,28 @@
+{
+  "name": "gridsome-source-mysql",
+  "version": "0.1.0",
+  "description": "Gridsome Source Plugin to load data directly from MySQL Database",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/u12206050/gridsome-source-mysql.git"
+  },
+  "keywords": [
+    "gridsome",
+    "gridsome-plugin",
+    "gridsome-source-plugin",
+    "mysql"
+  ],
+  "author": "Gerard Lamusse",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/u12206050/gridsome-source-mysql/issues"
+  },
+  "homepage": "https://github.com/u12206050/gridsome-source-mysql#readme",
+  "dependencies": {
+    "mysql": "^2.17.1"
+  }
+}
