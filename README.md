@@ -8,14 +8,14 @@ Gridsome Source Plugin to load data directly from MySQL Database
 
   * Build up your mysql queries as you need to get the data you require.
 
-  * Supports sub queries
+  * Supports sub queries and references between content types
 
 
 View the [changelog](https://github.com/u12206050/gridsome-source-mysql/blob/master/CHANGELOG.md) for any possible changes from previous versions.
 
 ## Install
 
-  `npm install gridsome-source-mysql`
+  `npm install gridsome-source-mysql --save`
 
 ## Setup
 

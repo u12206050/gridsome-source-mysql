@@ -128,7 +128,7 @@ class MySQLSource {
             const url = row[imgField]
             row[imgField] = null
 
-            if (url.match(/^https:\/\/.*\/.*\.(jpg|png|svg|gif|jpeg)($|\?)/i)) {
+            if (url && String(url).match(/^https:\/\/.*\/.*\.(jpg|png|svg|gif|jpeg)($|\?)/i)) {
               const filename = file.getFilename(url)
               const id = makeUid(url)
               const filepath = file.getFullPath(this.imageDirectory, filename)
