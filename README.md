@@ -35,11 +35,11 @@ module.exports = {
       options: {
         connection: {
           host: 'localhost',
-          port: 3306
+          port: 3306,
           user: 'root',
           password: 'secret',
           database: 'my_db',
-          connectionLimit : 10,
+          connectionLimit : 10
         },
         debug: true, // Default false
         ignoreImages: false,
@@ -49,19 +49,19 @@ module.exports = {
             name: 'author',
             path: {
               prefix: '/authors',
-              field: fullname
+              field: 'fullname'
             },
             sql: `SELECT id, fullname, avatar, url FROM author`,
             images: ['avatar'] // Default []
           },
           {
             name: 'post',
-            path: '/:title'
-            sql: `SELECT id, title, image, author as author_id, excerpt, body, created FROM post WHERE published = 1 LIMIT ?`
+            path: '/:title',
+            sql: `SELECT id, title, image, author as author_id, excerpt, body, created FROM post WHERE published = 1 LIMIT ?`,
             args: [10],
             images: ['avatar']
             subs: []
-          },
+          }
         ]
       }
     }

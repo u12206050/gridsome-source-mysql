@@ -12,11 +12,11 @@ class MySQLSource {
       queries: [],
       connection: {
         host: 'localhost',
-        port: 3306
+        port: 3306,
         user: 'root',
         password: 'secret',
         database: 'my_db',
-        connectionLimit : 10,
+        connectionLimit : 10
       }
     }
   }
@@ -47,9 +47,9 @@ class MySQLSource {
   }
 
   async fetchQueries(queries, parentQuery, parentRow) {
-    const { slugify, addContentType, makeUid, createReference, slugify } = this.store
+    const { slugify, addContentType, makeUid, createReference } = this.store
 
-    await Promise.all(queries.map(Q => {
+    await Promise.all(queries.map(async (Q) => {
       const args = (typeof Q.args === 'function' ? Q.args(parentRow) : Q.args) || null
       const sql = mysql.format(Q.sql, args)
       const cType = this.cTypes[Q.name] = addContentType({
@@ -60,18 +60,21 @@ class MySQLSource {
 
       const rows = await new Promise((resolve, reject) => {
         this.pool.query(sql, (error, results, fields) => {
-          if (error) throw error
+          if (error) throw new Error(error)
 
           /* Find relationship fields */
-          fields.forEach(f => {
-            const matches = f.match(/^(.+)_id$/)
-            if (matches.length === 1) {
+          console.log(typeof fields)
+          for (const f in fields) {
+            const field = fields[f].name
+            const matches = field.match(/^(.+)_id$/)
+            console.log(matches)
+            if (matches && matches.length === 1) {
               rels.push({
                 name: matches[0],
-                field: f
+                field
               })
             }
-          })
+          }
 
           resolve(results)
         })
@@ -87,12 +90,12 @@ class MySQLSource {
           let slug = `/${Q.name}/${row.id}`
           if (typeof Q.path === 'object') {
             slug = Q.path.prefix || ''
-            slug += `/${row[Q.path.field] || row.id}`
+            slug += `/${slugify(row[Q.path.field]) || row.id}`
             slug += Q.path.suffix || ''
           } else if (Q.path === 'string') {
-            slug = row[Q.path] || slug
+            slug = slugify(row[Q.path]) || slug
           }
-          return slugify(slug)
+          return slug
         }
       }
 
@@ -148,7 +151,7 @@ class MySQLSource {
     await Object.keys(this.images).map(async (id) => {
       const { filename, url, filepath } = this.images[id]
 
-      if (!fs.existsSync(filepath)) {
+      if (!file.exists(filepath)) {
         await file.download(url, filepath)
         ISDEV && console.log(`Downloaded ${filename}`)
       } else ISDEV && console.log(`${filename} already exists`)
@@ -157,3 +160,5 @@ class MySQLSource {
     this.loadImages = false
   }
 }
+
+module.exports = MySQLSource
