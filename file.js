@@ -1,8 +1,14 @@
+const queue = require('queue')
 const https = require('https')
 const fs = require('fs')
 const path = require('path')
 
 const ROOT = process.cwd()
+
+const Q = queue()
+Q.concurrency = 3
+Q.autostart = true
+Q.timeout = 5000
 
 function createDirectory(dir) {
   const pwd = path.join(ROOT, dir)
@@ -16,7 +22,7 @@ function getFullPath(dir, filename) {
 }
 
 function getFilename(url) {
-  return url.replace(/%2F/g, '/').split('/').pop().replace(/\#(.*?)$/, '').replace(/\?(.*?)$/, '');
+  return url.replace(/%2F/g, '/').split('/').pop().replace(/\#(.*?)$/, '').replace(/\?(.*?)$/, '')
 }
 
 function exists(filepath) {
@@ -24,17 +30,23 @@ function exists(filepath) {
 }
 
 function download(url, path) {
-  return new Promise((resolve, reject) => {
-    const file = fs.createWriteStream(path);
-    const request = https.get(url, (response) => {
-      response.pipe(file);
-      file.on('finish', () => {
-        file.close(resolve);
-      });
-    }).on('error', (err) => {
-      fs.unlink(dest);
-      throw new Error(err.message);
-    });
+  return new Promise(function(onDone) {
+    Q.push(function () {
+      console.log(`In Queue: ${Q.length}`)
+      return new Promise(function(resolve) {
+        console.log(`Downloading: ${url}`)
+        const file = fs.createWriteStream(path)
+        const request = https.get(url, (response) => {
+          response.pipe(file)
+          file.on('finish', () => {
+            file.close(resolve)
+          })
+        }).on('error', (err) => {
+          console.error(err.message)
+          fs.unlink(resolve)
+        })
+      }).then(onDone)
+    })
   })
 }
 
