@@ -32,17 +32,17 @@ module.exports = {
       use: 'gridsome-source-mysql',
       options: {
         connection: {
-          host: 'localhost',
+          host: 'localhost', // required
           port: 3306,
-          user: 'root',
-          password: 'secret',
-          database: 'my_db',
+          user: 'root', // required
+          password: 'secret', // required
+          database: 'my_db', // required
           connectionLimit : 10
         },
         debug: true, // Default false
         ignoreImages: false,
         imageDirectory: 'sql_images',
-        queries: [
+        queries: [ // required
           {
             name: 'Author',
             path: {
