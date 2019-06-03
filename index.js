@@ -33,6 +33,7 @@ class MySQLSource {
     });
 
     this.cTypes = {}
+    this.paths = {}
     this.queries = options.queries || []
     if (!this.queries.length) throw new Error('No queries to load')
 
@@ -70,14 +71,13 @@ class MySQLSource {
           if (error) throw new Error(error)
 
           /* Find relationship fields */
-          console.log(typeof fields)
           for (const f in fields) {
             const field = fields[f].name
             const matches = field.match(/^(.+)_id$/)
-            console.log(matches)
-            if (matches && matches.length === 1) {
+            if (matches && matches.length) {
               rels.push({
-                name: capitalize(matches[0]),
+                type: capitalize(matches[1]),
+                name: matches[1],
                 field
               })
             }
@@ -91,15 +91,16 @@ class MySQLSource {
 
       ISDEV && console.log(`${Q.name}: retrieved ${rows.length} results`)
 
-      if (typeof Q.path !== 'function') {
+      let PathFn = Q.path
+      if (typeof PathFn !== 'function') {
         /* Default path function */
-        Q.path = (slugify, row, parent) => {
+        PathFn = (slugify, row, parent) => {
           let slug = `/${Q.name}/${row.id}`
           if (typeof Q.path === 'object') {
             slug = Q.path.prefix || ''
             slug += `/${slugify(row[Q.path.field]) || row.id}`
             slug += Q.path.suffix || ''
-          } else if (Q.path === 'string') {
+          } else if (typeof Q.path === 'string') {
             slug = slugify(row[Q.path]) || slug
           }
           return slug
@@ -109,7 +110,11 @@ class MySQLSource {
       return Promise.all(rows.map(row => {
         if (!row.id) throw new Error('Rows must have id field')
 
-        row.path = Q.path(slugify, row, parentRow)
+        row.path = PathFn(slugify, row, parentRow)
+
+        if (this.paths[row.path]) {
+          row.path = `${row.path}-${this.paths[row.path]++}`
+        } else this.paths[row.path] = 1
 
         if (parentQuery && parentRow)
           row._parent = createReference(parentQuery.name, parentRow.id)
@@ -139,7 +144,7 @@ class MySQLSource {
 
         /* Check for relationships */
         rels.forEach(rel => {
-          row[rel.field] = createReference(rel.name, row[rel.field])
+          row[rel.name] = createReference(rel.type, row[rel.field])
         })
 
         cType.addNode(row)
