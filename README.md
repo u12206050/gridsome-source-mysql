@@ -10,6 +10,8 @@ Gridsome Source Plugin to load data directly from MySQL Database
 
   * Supports sub queries and references between content types
 
+  * Content type references via `xxx_id`(single id) and `xxx_ids`(comma delimited ids)
+
 
 View the [changelog](https://github.com/u12206050/gridsome-source-mysql/blob/master/CHANGELOG.md) for any possible changes from previous versions.
 
@@ -39,8 +41,8 @@ module.exports = {
           database: 'my_db', // required
           connectionLimit : 10
         },
-        debug: true, // Default false
-        ignoreImages: false,
+        debug: true, // Default false on production
+        ignoreImages: false, // Do not download any images
         imageDirectory: 'sql_images',
         queries: [ // required
           {

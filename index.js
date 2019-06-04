@@ -1,11 +1,12 @@
 const mysql = require('mysql')
 const file = require('./file.js')
 
-const ISDEV = process.env.NODE_ENV === 'development'
+let ISDEV = process.env.NODE_ENV === 'development'
 
 /* Capitalize string */
 function capitalize(str) {
-  return str.charAt(0).toUpperCase() + str.slice(1)
+  str = str.trim()
+  return str.trim().charAt(0).toUpperCase() + str.slice(1)
 }
 
 class MySQLSource {
@@ -31,6 +32,8 @@ class MySQLSource {
     this.pool = mysql.createPool({
       ...options.connection
     });
+
+    if (options.debug === false) ISDEV = false
 
     this.cTypes = {}
     this.paths = {}
@@ -75,12 +78,13 @@ class MySQLSource {
           for (const f in fields) {
             const field = fields[f].name
             hasIdField = field === 'id' || hasIdField
-            const matches = field.match(/^(.+)_id$/)
-            if (matches && matches.length) {
+            const matches = field.match(/^(.+)_(ids?$)/)
+            if (matches && matches.length > 2) {
               rels.push({
                 type: capitalize(matches[1]),
                 name: matches[1],
-                field
+                field,
+                isArray: matches[2] === 'ids'
               })
             }
           }
@@ -102,9 +106,9 @@ class MySQLSource {
           let slug = `/${Q.name}/${row.id}`
           if (typeof Q.path === 'object') {
             slug = Q.path.prefix || ''
-            slug += `/${slugify(row[Q.path.field]) || row.id}`
+            slug += `/${row[Q.path.field] ? slugify(row[Q.path.field]) : row.id}`
             slug += Q.path.suffix || ''
-          } else if (typeof Q.path === 'string') {
+          } else if (typeof Q.path === 'string' && row[Q.path]) {
             slug = slugify(row[Q.path]) || slug
           }
           return slug
@@ -147,7 +151,13 @@ class MySQLSource {
 
         /* Check for relationships */
         rels.forEach(rel => {
-          row[rel.name] = createReference(rel.type, makeUid(`${rel.type}–${row[rel.field]}`))
+          if (rel.isArray) {
+            const ids = String(row[rel.field]).split(',')
+            row[rel.name] = ids.map(id => createReference(rel.type,
+              makeUid(`${rel.type}–${id}`)))
+          } else {
+            row[rel.name] = createReference(rel.type, makeUid(`${rel.type}–${row[rel.field]}`))
+          }
         })
 
         cType.addNode(row)
