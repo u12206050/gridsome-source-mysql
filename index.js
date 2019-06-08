@@ -115,8 +115,9 @@ class MySQLSource {
         }
       }
 
-      return Promise.all(rows.map(row => {
-        row.id = makeUid(`${Q.name}–${row.id}`)
+      return Promise.all(rows.map((row, i) => {
+        if (row.id) row._id = row.id
+        row.id = makeUid(`${Q.name}–${row.id || i}`)
         row.path = PathFn(slugify, row, parentRow)
 
         if (this.paths[row.path]) {
@@ -129,23 +130,16 @@ class MySQLSource {
         /* Check for images */
         if (this.images && Array.isArray(Q.images)) {
           Q.images.forEach(imgField => {
-            const url = row[imgField]
-            row[imgField] = null
-
-            if (url && String(url).match(/^https:\/\/.*\/.*\.(jpg|png|svg|gif|jpeg)($|\?)/i)) {
-              const filename = file.getFilename(url)
-              const id = makeUid(url)
-              const filepath = file.getFullPath(this.imageDirectory, filename)
-              if (!this.images[id]) this.images[id] = {
-                filename,
-                url,
-                filepath
-              }
-
-              this.loadImages = true
-
-              row[imgField] = filepath
+            if (Array.isArray(imgField)) {
+              if (imgField.length !== 1) throw new Error('MySQL query image array should contain exactly 1 field')
+              row[imgField[0]] = String(row[imgField[0]]).split(',').map((url, i) => ({
+                index: i,
+                image: this.addImage(url)
+              })).filter(image => !!image)
+            } else {
+              row[imgField] = this.addImage(row[imgField])
             }
+
           })
         }
 
@@ -168,6 +162,24 @@ class MySQLSource {
         return row
       }))
     }))
+  }
+
+  addImage(url) {
+    if (url && String(url).match(/^https:\/\/.*\/.*\.(jpg|png|svg|gif|jpeg)($|\?)/i)) {
+      const filename = file.getFilename(url)
+      const id = this.store.makeUid(url)
+      const filepath = file.getFullPath(this.imageDirectory, filename)
+      if (!this.images[id]) this.images[id] = {
+        filename,
+        url,
+        filepath
+      }
+
+      this.loadImages = true
+
+      return filepath
+    }
+    return null
   }
 
   async downloadImages() {

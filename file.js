@@ -1,3 +1,46 @@
+/* Usage */
+/*
+const file = require('./file.js')
+
+const imageDirectory = 'tmp_images'
+const images = {}
+let loadImages = false
+
+// Somewhere on each possible image url
+if (url && String(url).match(/^https:\/\/.*\/.*\.(jpg|png|svg|gif|jpeg)($|\?)/i)) {
+  const filename = file.getFilename(url)
+  const id = makeUid(url)
+  const filepath = file.getFullPath(imageDirectory, filename)
+  if (!images[id]) images[id] = {
+    filename,
+    url,
+    filepath
+  }
+
+  loadImages = true
+
+  // Assign filepath as the new value for the image
+  obj[imgField] = filepath
+}
+
+// After processing all fields
+if (loadImages) await downloadImages(images)
+
+async function downloadImages(images) {
+  file.createDirectory(imageDirectory)
+
+  await Object.keys(images).map(async (id) => {
+    const { filename, url, filepath } = images[id]
+
+    if (!file.exists(filepath)) {
+      await file.download(url, filepath)
+      console.log(`Downloaded ${filename}`)
+    } else console.log(`${filename} already exists`)
+  })
+}
+*/
+
+
 const queue = require('queue')
 const https = require('https')
 const fs = require('fs')

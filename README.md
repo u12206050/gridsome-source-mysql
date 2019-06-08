@@ -4,7 +4,7 @@ Gridsome Source Plugin to load data directly from MySQL Database
 
   * If you don't succeed through a CMS, bypass it and load the data directly from the MySQL Database
 
-  * Specify names of columns containing image urls to download and optimized them with Gridsome.
+  * Specify names of columns containing image urls to download and optimized them with Gridsome. Supports single and comma delimited image urls.
 
   * Build up your mysql queries as you need to get the data you require.
 
@@ -57,9 +57,9 @@ module.exports = {
           {
             name: 'Post',
             path: 'title',
-            sql: `SELECT id, title, image, author as author_id, excerpt, body, created FROM post WHERE published = ?`,
+            sql: `SELECT id, title, image, gallery, author as author_id, excerpt, body, created FROM post WHERE published = ?`,
             args: [1],
-            images: ['image']
+            images: ['image', ['gallery']] //Gallery contains comma delimited string of image arrays.
           }
         ]
       }
@@ -81,7 +81,11 @@ query {
       node {
         title
         path
-        image
+        image (width: 600, height: 600)
+        gallery {
+          index
+          image (width: 400, height: 400)
+        }
         excerpt
         author {
           fullname
@@ -110,3 +114,65 @@ args? | function(parentRow?): array<string> | Return array of values based on da
 images? | array<string> | Names of fields on rows that contain urls of images to download and optimize via Gridsome
 subs | array<Query> | Array of Query to execute per result of the current query
 
+# MySQL Query Examples
+
+## Generate comma seperated urls and ids
+
+The following is an example of how you can generated the fields for using as a `one-to-many` relationship in graphql and also joining image urls.
+
+```
+queries: [
+  {
+    name: 'Product',
+    path: 'slug',
+    images: ['image', ['gallery']] // Default []
+    sql: `SELECT
+      pc.product_id as id,
+      cats.category_ids,
+      pc.sku,
+      pc.name,
+      pc.price,
+      pc.slug,
+      CONCAT('https://example.com/media/', pc.image) as image,
+      media.images as 'gallery',
+      FROM product_catalog pc
+      INNER JOIN (
+          SELECT product_id, GROUP_CONCAT(CONCAT('https://example.com/media/catalog/product',value)) AS 'images'
+          FROM product_media
+          GROUP BY product_id
+        ) media
+      ON media.product_id = pc.product_id
+      INNER JOIN (
+          SELECT product_id, GROUP_CONCAT(category_id) AS 'category_ids'
+          FROM product_category
+          GROUP BY product_id
+        ) cats
+      ON cats.product_id = pc.product_id
+      WHERE pc.status = 1`
+  },
+  {
+    name: 'Category',
+    path: {
+      prefix: '/category',
+      field: 'path'
+    },
+    images: ['image'],
+    sql: `SELECT
+      category_id AS 'id',
+      name,
+      CONCAT('https://example.com/media/', image) as image,
+      parent_id AS 'category_id',
+      position,
+      level,
+      product_count AS 'count'
+      FROM category_catelog
+      WHERE active = 1`
+  }
+]
+```
+
+In the above example `cats.category_ids` will result in an array of `Category` content types if you have specified a query for `Category`
+
+Images in this database were relative, so in order for them to be downloaded they need to be concatenated with the site origin.
+
+In the `Category` query, we change the `parent_id` to output as `category_id` since we want it to be linked to another `Category` automatically.
