@@ -97,7 +97,7 @@ class MySQLSource {
 
       if (!Array.isArray(rows)) rows = []
 
-      ISDEV && console.log(`${Q.name}: retrieved ${rows.length} results`)
+      console.log(`${Q.name}: retrieved ${rows.length} results`)
 
       let PathFn = Q.path
       if (typeof PathFn !== 'function') {
@@ -116,8 +116,8 @@ class MySQLSource {
       }
 
       return Promise.all(rows.map((row, i) => {
-        if (row.id) row._id = row.id
-        row.id = makeUid(`${Q.name}–${row.id || i}`)
+        row.mysqlId = row.id
+        row.id = makeUid(`${Q.name}–${row.id}`)
         row.path = PathFn(slugify, row, parentRow)
 
         if (this.paths[row.path]) {

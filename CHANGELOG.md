@@ -2,7 +2,7 @@
 
   * Within the image options field for each query you can specify an array with the one and only element being the field name of the field containing a comma delimited string of image urls to be downloaded.
 
-  * The original id value if one exists will now be available as `_id`
+  * The original id value if one exists will now be available as `mysqlId`
 
 1.2.2 Support for string array of ids
 
