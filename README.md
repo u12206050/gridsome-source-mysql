@@ -59,7 +59,7 @@ module.exports = {
             path: 'title',
             sql: `SELECT id, title, image, gallery, author as author_id, excerpt, body, created FROM post WHERE published = ?`,
             args: [1],
-            images: ['image', ['gallery']] //Gallery contains comma delimited string of image arrays.
+            images: ['image', ['gallery']] //Gallery contains comma delimited string of image url.
           }
         ]
       }
@@ -68,7 +68,7 @@ module.exports = {
 }
 ```
 
-Relationship ids should be in the format of `xxx_id` where `xxx` is the name of another query
+Relationship ids should be in the format of `xxx_id` where `xxx` is the name of another query.
 
 ## Usage
 

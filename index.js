@@ -46,6 +46,9 @@ class MySQLSource {
 
     api.loadSource(async (store) => {
       this.store = store
+
+      this.checkQNames(this.queries)
+
       await this.fetchQueries(this.queries)
       if (this.images && this.loadImages) await this.downloadImages()
 
@@ -55,17 +58,25 @@ class MySQLSource {
     })
   }
 
+  checkQNames(queries) {
+    Array.isArray(queries) && queries.forEach((Q) => {
+      Q.name = capitalize(Q.name)
+      if (this.cTypes[Q.name]) console.warn(`You should not have two queries with the same name. ${Q.name}`)
+      else this.cTypes[Q.name] = true
+      if (Q.subs) this.checkQNames(Q.subs)
+    })
+  }
+
   async fetchQueries(queries, parentQuery, parentRow) {
     const { slugify, addContentType, makeUid, createReference } = this.store
 
     await Promise.all(queries.map(async (Q) => {
       const args = (typeof Q.args === 'function' ? Q.args(parentRow) : Q.args) || null
       const sql = mysql.format(Q.sql, args)
+
       const cType = this.cTypes[Q.name] = addContentType({
         typeName: Q.name
       })
-
-      Q.name = capitalize(Q.name)
 
       const rels = []
 
@@ -80,12 +91,18 @@ class MySQLSource {
             hasIdField = field === 'id' || hasIdField
             const matches = field.match(/^(.+)_(ids?$)/)
             if (matches && matches.length > 2) {
-              rels.push({
-                type: capitalize(matches[1]),
-                name: matches[1],
-                field,
-                isArray: matches[2] === 'ids'
-              })
+              const qname = matches[1]
+              const qtype = capitalize(qname)
+              if (this.cTypes[qtype]) {
+                rels.push({
+                  type: qtype,
+                  name: qname,
+                  field,
+                  isArray: matches[2] === 'ids'
+                })
+              } else {
+                console.warn(`No query with name "${qname}" exists. Not creating relation`)
+              }
             }
           }
 
