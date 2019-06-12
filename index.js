@@ -1,4 +1,6 @@
+const os = require('os')
 const mysql = require('mysql')
+const pMap = require('p-map')
 const file = require('./file.js')
 
 let ISDEV = process.env.NODE_ENV === 'development'
@@ -33,7 +35,7 @@ class MySQLSource {
       ...options.connection
     });
 
-    if (options.debug === false) ISDEV = false
+    ISDEV = options.debug
 
     this.cTypes = {}
     this.paths = {}
@@ -50,11 +52,11 @@ class MySQLSource {
       this.checkQNames(this.queries)
 
       await this.fetchQueries(this.queries)
-      if (this.images && this.loadImages) await this.downloadImages()
-
       this.pool.end(function(err) {
         ISDEV && console.log('MySQL Connections Closed')
-      });
+      })
+
+      if (this.images && this.loadImages) await this.downloadImages()
     })
   }
 
@@ -202,14 +204,26 @@ class MySQLSource {
   async downloadImages() {
     file.createDirectory(this.imageDirectory)
 
-    await Object.keys(this.images).map(async (id) => {
-      const { filename, url, filepath } = this.images[id]
+    let exists = 0
+    const download = []
+    Object.keys(this.images).forEach(async (id) => {
+      const { filename, filepath } = this.images[id]
 
       if (!file.exists(filepath)) {
+        download.push(this.images[id])
+      } else exists++
+    })
+
+    ISDEV && console.log(`${exists} images already exists and ${download.length} to download`)
+
+    if (download.length) {
+      await pMap(download, async ({ filename, url, filepath }) => {
         await file.download(url, filepath)
         ISDEV && console.log(`Downloaded ${filename}`)
-      } else ISDEV && console.log(`${filename} already exists`)
-    })
+      }, {
+        concurrency: os.cpus * 2
+      })
+    }
 
     this.loadImages = false
   }

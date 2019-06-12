@@ -29,30 +29,34 @@ if (loadImages) await downloadImages(images)
 async function downloadImages(images) {
   file.createDirectory(imageDirectory)
 
-  await Object.keys(images).map(async (id) => {
-    const { filename, url, filepath } = images[id]
+  let exists = 0
+  const download = []
+  Object.keys(images).forEach(async (id) => {
+    const { filename, filepath } = images[id]
 
     if (!file.exists(filepath)) {
-      await file.download(url, filepath)
-      console.log(`Downloaded ${filename}`)
-    } else console.log(`${filename} already exists`)
+      download.push(images[id])
+    } else exists++
   })
+
+  ISDEV && console.log(`${exists} images already exists and ${download.length} to download`)
+
+  if (download.length) {
+    await pMap(download, async ({ filename, url, filepath }) => {
+      await file.download(url, filepath)
+      ISDEV && console.log(`Downloaded ${filename}`)
+    }, {
+      concurrency: os.cpus * 2
+    })
+  }
 }
 */
 
-
-const queue = require('queue')
 const https = require('https')
 const fs = require('fs')
-const os = require('os')
 const path = require('path')
 
 const ROOT = process.cwd()
-
-const Q = queue()
-Q.concurrency = os.cpus
-Q.autostart = true
-Q.timeout = 30000
 
 function createDirectory(dir) {
   const pwd = path.join(ROOT, dir)
@@ -74,21 +78,17 @@ function exists(filepath) {
 }
 
 function download(url, path) {
-  return new Promise(function(onDone) {
-    Q.push(function () {
-      return new Promise(function(resolve) {
-        console.log(`#${Q.length} Downloading: ${url}`)
-        const file = fs.createWriteStream(path)
-        const request = https.get(url, (response) => {
-          response.pipe(file)
-          file.on('finish', () => {
-            file.close(resolve)
-          })
-        }).on('error', (err) => {
-          console.error(err.message)
-          fs.unlink(resolve)
-        })
-      }).then(onDone)
+  return new Promise(function(resolve) {
+    console.log(`#${Q.length} Downloading: ${url}`)
+    const file = fs.createWriteStream(path)
+    const request = https.get(url, (response) => {
+      response.pipe(file)
+      file.on('finish', () => {
+        file.close(resolve)
+      })
+    }).on('error', (err) => {
+      console.error(err.message)
+      fs.unlink(resolve)
     })
   })
 }

@@ -1,3 +1,5 @@
+1.4.0 Swapped out queue for [p-Map](https://github.com/sindresorhus/p-map)
+
 1.3.3 Set download concurrency to no of cpus
 
 1.3.2 Check relation name
