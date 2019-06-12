@@ -3,6 +3,9 @@ const mysql = require('mysql')
 const pMap = require('p-map')
 const file = require('./file.js')
 
+let cpus = os.cpus().length
+cpus = cpus > 2 ? cpus : 2
+
 let ISDEV = process.env.NODE_ENV === 'development'
 
 /* Capitalize string */
@@ -221,7 +224,7 @@ class MySQLSource {
         await file.download(url, filepath)
         ISDEV && console.log(`Downloaded ${filename}`)
       }, {
-        concurrency: os.cpus * 2
+        concurrency: cpus * 2
       })
     }
 
