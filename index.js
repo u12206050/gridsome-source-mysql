@@ -1,4 +1,5 @@
 const os = require('os')
+const readline = require('readline')
 const mysql = require('mysql')
 const pMap = require('p-map')
 const file = require('./file.js')
@@ -217,15 +218,26 @@ class MySQLSource {
       } else exists++
     })
 
-    ISDEV && console.log(`${exists} images already exists and ${download.length} to download`)
+    const total = download.length
+    let progress = 0
+    function status(msg) {
+      readline.clearLine(process.stdout, 0)
+      readline.cursorTo(process.stdout, 0, null)
+      process.stdout.write(msg)
+    }
 
-    if (download.length) {
+    console.log(`${exists} images already exists with ${total} images to download`)
+
+    if (total) {
       await pMap(download, async ({ filename, url, filepath }) => {
         await file.download(url, filepath)
-        ISDEV && console.log(`Downloaded ${filename}`)
+        status(`${Math.round((++progress)*100/total)}% – Downloaded ${filename}`)
       }, {
         concurrency: cpus * 2
       })
+
+      status('100% – ')
+      console.log(`${total} images downloaded`)
     }
 
     this.loadImages = false

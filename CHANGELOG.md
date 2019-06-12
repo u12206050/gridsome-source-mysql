@@ -1,3 +1,5 @@
+1.4.3 Added back status output for downloading files
+
 1.4.2 Fixed version 1.4.0
 
 1.4.0 *Broken Version* Swapped out queue for [p-Map](https://github.com/sindresorhus/p-map)
