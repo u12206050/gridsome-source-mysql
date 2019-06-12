@@ -79,7 +79,6 @@ function exists(filepath) {
 
 function download(url, path) {
   return new Promise(function(resolve) {
-    console.log(`#${Q.length} Downloading: ${url}`)
     const file = fs.createWriteStream(path)
     const request = https.get(url, (response) => {
       response.pipe(file)
