@@ -1,3 +1,5 @@
+1.3.3 Set download concurrency to no of cpus
+
 1.3.2 Check relation name
 
   * Implemented a check for a query with the name `xxx` from `xxx_id` before creating a relation.
