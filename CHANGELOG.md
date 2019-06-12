@@ -1,4 +1,6 @@
-1.4.0 Swapped out queue for [p-Map](https://github.com/sindresorhus/p-map)
+1.4.2 Fixed version 1.4.0
+
+1.4.0 *Broken Version* Swapped out queue for [p-Map](https://github.com/sindresorhus/p-map)
 
 1.3.3 Set download concurrency to no of cpus
 
@@ -10,7 +12,7 @@
 
   * Unpublished version 1.3.0
 
-1.3.0 Support for array of image urls. Keep original ID
+1.3.0 *Broken Version* Support for array of image urls. Keep original ID
 
   * Within the image options field for each query you can specify an array with the one and only element being the field name of the field containing a comma delimited string of image urls to be downloaded.
 
