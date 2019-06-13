@@ -56,7 +56,8 @@ const https = require('https')
 const fs = require('fs')
 const path = require('path')
 
-const ROOT = process.cwd()
+/* Cache on Netlify */
+const ROOT = process.env.NETLIFY_BUILD_BASE || process.cwd()
 
 function createDirectory(dir) {
   const pwd = path.join(ROOT, dir)
@@ -66,6 +67,7 @@ function createDirectory(dir) {
 }
 
 function getFullPath(dir, filename) {
+
   return path.join(ROOT, dir, filename)
 }
 

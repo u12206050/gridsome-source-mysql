@@ -1,3 +1,7 @@
+1.4.6 Cache on Netlify
+
+  * Automatically cache images when deployed on netlify
+
 1.4.5 Support for dynamic routes added
 
   * Now you can make use of dynamic routes by specifying a `route` for your query. This saves space in the final `routes.js` file eg:

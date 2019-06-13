@@ -15,7 +15,10 @@ Gridsome Source Plugin to load data directly from MySQL Database
 
 View the [changelog](https://github.com/u12206050/gridsome-source-mysql/blob/master/CHANGELOG.md) for any possible changes from previous versions.
 
-*Latest Update v1.4.5:* Support for dynamic routes added
+### Latest Updates
+
+  *v1.4.6* Cache on Netlify
+  *v1.4.5* Support for dynamic routes added
 
 ## Install
 
