@@ -81,7 +81,8 @@ class MySQLSource {
       const sql = mysql.format(Q.sql, args)
 
       const cType = this.cTypes[Q.name] = addContentType({
-        typeName: Q.name
+        typeName: Q.name,
+        route: Q.route
       })
 
       const rels = []

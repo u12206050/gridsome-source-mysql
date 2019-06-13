@@ -15,6 +15,8 @@ Gridsome Source Plugin to load data directly from MySQL Database
 
 View the [changelog](https://github.com/u12206050/gridsome-source-mysql/blob/master/CHANGELOG.md) for any possible changes from previous versions.
 
+*Latest Update v1.4.5:* Support for dynamic routes added
+
 ## Install
 
   `npm install gridsome-source-mysql --save`
@@ -47,10 +49,8 @@ module.exports = {
         queries: [ // required
           {
             name: 'Author',
-            path: {
-              prefix: '/authors',
-              field: 'fullname'
-            },
+            route: '/authors/:path',
+            path: 'fullname',
             sql: `SELECT id, fullname, avatar, url FROM author`,
             images: ['avatar'] // Default []
           },
@@ -105,13 +105,14 @@ query {
 Field | Type | Info
 ---|---|---
 name | string | Name of the resulting content type
+route? | string | Specify a [dynamic route](https://gridsome.org/docs/routing) structure eg. `/blog/:path`
 path | function(slugify, row, parentRow?): string | Return the path for the given row
-path | { prefix?: string, field: string, suffix?: string } | Field should exist on each row and will be slugified
+path | { prefix?: string, field: string, suffix?: string } | `field` should exist on each row and will be slugified
 path | string | Name of a field on each row to slugify and use as path
 sql | string | A SQL Query with optional placeholders `?` which will be replaced by args in order
 args? | array<string> | Simple array of static values
 args? | function(parentRow?): array<string> | Return array of values based on data from the parentRow or dynamic calculated data, eg. [Date.now()]
-images? | array<string> | Names of fields on rows that contain urls of images to download and optimize via Gridsome
+images? | array<string|string[]> | Names of fields on rows that contain urls of images to download and optimize via Gridsome
 subs | array<Query> | Array of Query to execute per result of the current query
 
 # MySQL Query Examples
@@ -152,10 +153,8 @@ queries: [
   },
   {
     name: 'Category',
-    path: {
-      prefix: '/category',
-      field: 'path'
-    },
+    route: '/category/:path',
+    path: 'path',
     images: ['image'],
     sql: `SELECT
       category_id AS 'id',

@@ -1,3 +1,31 @@
+1.4.5 Support for dynamic routes added
+
+  * Now you can make use of dynamic routes by specifying a `route` for your query. This saves space in the final `routes.js` file eg:
+
+  **Before**
+  ```
+  {
+    name: 'Author',
+    path: {
+      prefix: '/author',
+      field: 'name'
+    },
+    …
+  }
+  ```
+
+  **After**
+  ```
+  {
+    name: 'Author',
+    route: '/author/:path',
+    path: 'name',
+    …
+  }
+  ```
+
+  * Read more about Gridsome routing [here](https://gridsome.org/docs/routing)
+
 1.4.3 Added back status output for downloading files
 
 1.4.2 Fixed version 1.4.0
