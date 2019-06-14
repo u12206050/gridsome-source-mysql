@@ -49,7 +49,7 @@ module.exports = {
         debug: true, // Default false on production
         ignoreImages: false, // Do not download any images
         imageDirectory: 'sql_images',
-        regex: `/()_\d(.(jpg|png|svg|gif|jpeg))/i`, // Default false
+        regex: /()_\d(.(jpg|png|svg|gif|jpeg))/i, // Default false
         queries: [ // required
           {
             name: 'Author',

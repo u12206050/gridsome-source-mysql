@@ -198,7 +198,7 @@ class MySQLSource {
   addImage(url) {
     if (url && String(url).match(/^https:\/\/.*\/.*\.(jpg|png|svg|gif|jpeg)($|\?)/i)) {
       const filename = file.getFilename(url, this.regex)
-      const id = this.store.makeUid(url)
+      const id = this.store.makeUid(filename)
       const filepath = file.getFullPath(this.imageDirectory, filename)
       if (!this.images[id]) this.images[id] = {
         filename,
