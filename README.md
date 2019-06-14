@@ -17,7 +17,7 @@ View the [changelog](https://github.com/u12206050/gridsome-source-mysql/blob/mas
 
 ### Latest Updates
 
-  *v1.4.6* Added regex option to clean up image file names
+  *v1.4.7* Added regex option to clean up image file names
   *v1.4.5* Support for dynamic routes added
 
 ## Install

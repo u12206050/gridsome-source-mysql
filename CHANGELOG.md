@@ -1,4 +1,4 @@
-1.4.6 Added regex option to clean up image file names
+1.4.7 Added regex option to clean up image file names
 
   * Useful for removing duplicate images that are the same.
 
