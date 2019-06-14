@@ -1,3 +1,7 @@
+1.4.6 Added regex option to clean up image file names
+
+  * Useful for removing duplicate images that are the same.
+
 1.4.5 Support for dynamic routes added
 
   * Now you can make use of dynamic routes by specifying a `route` for your query. This saves space in the final `routes.js` file eg:

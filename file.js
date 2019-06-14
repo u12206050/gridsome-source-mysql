@@ -69,8 +69,9 @@ function getFullPath(dir, filename) {
   return path.join(ROOT, dir, filename)
 }
 
-function getFilename(url) {
-  return url.replace(/%2F/g, '/').split('/').pop().replace(/\#(.*?)$/, '').replace(/\?(.*?)$/, '')
+function getFilename(url, regex) {
+  let name = url.replace(/%2F/g, '/').split('/').pop().replace(/\#(.*?)$/, '').replace(/\?(.*?)$/, '')
+  return regex ? name.replace(regex, '$1$2') : name
 }
 
 function exists(filepath) {

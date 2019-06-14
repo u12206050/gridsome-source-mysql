@@ -21,6 +21,7 @@ class MySQLSource {
       debug: false,
       ignoreImages: false,
       imageDirectory: 'sql_images',
+      regex: false,
       queries: [],
       connection: {
         host: 'localhost',
@@ -35,20 +36,26 @@ class MySQLSource {
 
   constructor (api, options = MySQLSource.defaultOptions()) {
 
+    const opts = {
+      ...MySQLSource.defaultOptions(),
+      ...options
+    }
+
     this.pool = mysql.createPool({
-      ...options.connection
+      ...opts.connection
     });
 
-    ISDEV = options.debug
+    ISDEV = opts.debug
 
     this.cTypes = {}
     this.paths = {}
-    this.queries = options.queries || []
+    this.queries = opts.queries || []
     if (!this.queries.length) throw new Error('No queries to load')
 
     this.loadImages = false
-    this.images = options.ignoreImages ? false : {}
-    this.imageDirectory = options.imageDirectory
+    this.regex = opts.regex
+    this.images = opts.ignoreImages ? false : {}
+    this.imageDirectory = opts.imageDirectory
 
     api.loadSource(async (store) => {
       this.store = store
@@ -190,7 +197,7 @@ class MySQLSource {
 
   addImage(url) {
     if (url && String(url).match(/^https:\/\/.*\/.*\.(jpg|png|svg|gif|jpeg)($|\?)/i)) {
-      const filename = file.getFilename(url)
+      const filename = file.getFilename(url, this.regex)
       const id = this.store.makeUid(url)
       const filepath = file.getFullPath(this.imageDirectory, filename)
       if (!this.images[id]) this.images[id] = {
