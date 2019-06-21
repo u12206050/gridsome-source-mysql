@@ -88,7 +88,7 @@ function download(url, path) {
       })
     }).on('error', (err) => {
       console.error(err.message)
-      fs.unlink(resolve)
+      fs.unlink(String(path), resolve)
     })
   })
 }
