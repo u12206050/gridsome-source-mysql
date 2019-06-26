@@ -85,9 +85,9 @@ class MySQLSource {
       let res;
       if (!opts.ignoreImages) {
         this.images = {}
-        if (opt.jsonId) {
+        if (opts.jsonId) {
           try {
-            res = await axios.get(`https://www.jsonstore.io/${opt.jsonId}`)
+            res = await axios.get(`https://www.jsonstore.io/${opts.jsonId}`)
             console.log('Loaded from jsonstore')
             this.images = res.ok ? res.result || {} : {}
           } catch(error) {
@@ -107,9 +107,9 @@ class MySQLSource {
 
       if (this.images) {
         if (this.loadImages) await this.downloadImages()
-        if (opt.jsonId) {
+        if (opts.jsonId) {
           try {
-            res = await axios.put(`https://www.jsonstore.io/${opt.jsonId}`, this.images)
+            res = await axios.put(`https://www.jsonstore.io/${opts.jsonId}`, this.images)
             if (res && res.ok) console.log('Saved to jsonstore')
           } catch(error) {
             console.log('Error saving to jsonstore')
