@@ -89,15 +89,11 @@ class MySQLSource {
           try {
             res = await axios.get(`https://www.jsonstore.io/${opts.jsonId}`)
             res = res.data
-            if (res && res.ok && res.result && res.result.chunks) {
+            if (res && res.ok && res.result && res.result.chunks > 0) {
               let loaded = 0
               console.log(`Loading ${res.result.chunks} chunks`)
-              q = []
-              for(let i = 0; i < res.result.chunks; i++) {
-                q.push(i)
-              }
 
-              await pMap(q, async (i) => {
+              await pMap(new Array(res.result.chunks), async (e,i) => {
                 let resp = await axios.get(`https://www.jsonstore.io/${opts.jsonId}-${i}`)
                 resp = resp.data
                 if (resp && resp.ok) {
@@ -162,7 +158,13 @@ class MySQLSource {
                 console.log(error.message)
               }
             }, { concurrency: 1 })
-            console.log(`Saved ${q.length} chunks to jsonstore`)
+
+            res = await axios.put(`https://www.jsonstore.io/${opts.jsonId}`, {
+              chunks: q.length
+            })
+            if (res && res.data && res.data.ok)
+              console.log(`Saved ${q.length} chunks to jsonstore`)
+            else console.log(`Issue saving ${q.length} chunks to jsonstore`)
 
           } catch(error) {
             console.log('Error saving to jsonstore')
