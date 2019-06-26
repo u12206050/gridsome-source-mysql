@@ -26,6 +26,7 @@ class MySQLSource {
       imageDirectory: 'sql_images',
       regex: false,
       queries: [],
+      jsonId: false,
       connection: {
         host: 'localhost',
         port: 3306,
@@ -57,7 +58,7 @@ class MySQLSource {
 
     this.loadImages = false
     this.regex = opts.regex
-    this.images = opts.ignoreImages ? false : {}
+    this.images = false
     this.imageDirectory = opts.imageDirectory
 
     if (opts.cloudinary) {
@@ -79,6 +80,18 @@ class MySQLSource {
     api.loadSource(async (store) => {
       this.store = store
 
+      if (!opts.ignoreImages) {
+        this.images = {}
+        if (opt.jsonId) {
+          try {
+            const res = await axios.get(`https://www.jsonstore.io/${opt.jsonId}`
+            this.images = res.ok ? res.result : {}
+          } catch(error) {
+            this.images = {}
+          }
+        }
+      }
+
       this.checkQNames(this.queries)
 
       await this.fetchQueries(this.queries)
@@ -86,7 +99,12 @@ class MySQLSource {
         ISDEV && console.log('MySQL Connections Closed')
       })
 
-      if (this.images && this.loadImages) await this.downloadImages()
+      if (this.images) {
+        if (this.loadImages) await this.downloadImages()
+        if (opt.jsonId) {
+          await axios.put(`https://www.jsonstore.io/${opt.jsonId}`, this.images)
+        }
+      }
     })
   }
 
