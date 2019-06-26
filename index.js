@@ -7,6 +7,8 @@ const file = require('./file.js')
 const probe = require('probe-image-size')
 const imageDataURI = require('image-data-uri')
 
+const axios = require('axios')
+
 let cpus = os.cpus().length
 cpus = cpus > 2 ? cpus : 2
 
