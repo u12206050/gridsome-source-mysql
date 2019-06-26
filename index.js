@@ -235,13 +235,12 @@ class MySQLSource {
             const srcset = []
             cloud.sizes.forEach(size => {
               if (size < meta.width) {
-                let url = cloud.toUrl(path, `c_limit,q_auto:best,w_${size}`)
-                srcset.push(`${url} ${size}w`)
+                srcset.push(`${cloud.toUrl(path, `c_limit,q_auto:best,w_${size},f_auto`)} ${size}w`)
               }
             })
 
-            const src = cloud.toUrl(path, `c_limit,q_auto:best,w_${meta.width}`)
-            srcset.push(`${url} ${meta.width}w`)
+            const src = cloud.toUrl(path, `c_limit,q_auto:best,w_${meta.width},f_auto`)
+            srcset.push(`${src} ${meta.width}w`)
 
             images[id] = {
               src,
