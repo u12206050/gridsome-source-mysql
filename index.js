@@ -230,7 +230,7 @@ class MySQLSource {
             const imageUri = await imageDataURI.encodeFromURL(cloud.toUrl(path, cloud.uri), {
               timeout: 20000
             })
-            const meta = await probe(url)
+            const meta = await probe(cloud.toUrl(path))
 
             const srcset = []
             cloud.sizes.forEach(size => {
