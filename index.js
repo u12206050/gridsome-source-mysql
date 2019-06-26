@@ -4,6 +4,9 @@ const mysql = require('mysql')
 const pMap = require('p-map')
 const file = require('./file.js')
 
+const probe = require('probe-image-size')
+const imageDataURI = require('image-data-uri')
+
 let cpus = os.cpus().length
 cpus = cpus > 2 ? cpus : 2
 
@@ -23,6 +26,13 @@ class MySQLSource {
       imageDirectory: 'sql_images',
       regex: false,
       queries: [],
+      cloudinary: {
+        name: 'dprtlkeil',
+        folder: 'media',
+        uri: 'c_scale,e_vectorize,w_50',
+        sizes: ['1920', '1024', '480'],
+        match: /https?:\/\/www\.tilboligen\.no\/media\//
+      },
       connection: {
         host: 'localhost',
         port: 3306,
@@ -56,6 +66,22 @@ class MySQLSource {
     this.regex = opts.regex
     this.images = opts.ignoreImages ? false : {}
     this.imageDirectory = opts.imageDirectory
+
+    if (opts.cloudinary) {
+      const { name, match, folder, uri, sizes } = opts.cloudinary
+      this.cloud = {
+        name, match, folder, uri, sizes,
+        isMatch: (url) => {
+          return url.match(match)
+        },
+        getPath: (url) => {
+          return url.replace(match, '')
+        },
+        toUrl: (path, size) => {
+          return `https://res.cloudinary.com/${name}/image/upload${size ? `/${size}/` : '/'}${folder}/${path}`
+        }
+      }
+    }
 
     api.loadSource(async (store) => {
       this.store = store
@@ -146,7 +172,7 @@ class MySQLSource {
         }
       }
 
-      return Promise.all(rows.map((row, i) => {
+      return Promise.all(rows.map(async (row, i) => {
         row.mysqlId = row.id
         row.id = makeUid(`${Q.name}–${row.id}`)
         row.path = PathFn(slugify, row, parentRow)
@@ -160,17 +186,19 @@ class MySQLSource {
 
         /* Check for images */
         if (this.images && Array.isArray(Q.images)) {
-          Q.images.forEach(imgField => {
+          await pMap(Q.images, async imgField => {
             if (Array.isArray(imgField)) {
               if (imgField.length !== 1) throw new Error('MySQL query image array should contain exactly 1 field')
-              row[imgField[0]] = String(row[imgField[0]]).split(',').map((url, i) => ({
+              const imageUrls = String(row[imgField[0]]).split(',')
+              row[imgField[0]] = await Promise.all(imageUrls.map(async (url, i) => ({
                 index: i,
-                image: this.addImage(url)
-              })).filter(image => !!image)
+                image: await this.addImage(url)
+              })))
             } else {
-              row[imgField] = this.addImage(row[imgField])
+              row[imgField] = await this.addImage(row[imgField])
             }
-
+          }, {
+            concurrency: cpus
           })
         }
 
@@ -195,20 +223,57 @@ class MySQLSource {
     }))
   }
 
-  addImage(url) {
-    if (url && String(url).match(/^https:\/\/.*\/.*\.(jpg|png|svg|jpeg)($|\?)/i)) {
-      const filename = file.getFilename(url, this.regex)
-      const id = this.store.makeUid(filename)
-      const filepath = file.getFullPath(this.imageDirectory, filename)
-      if (!this.images[id]) this.images[id] = {
-        filename,
-        url,
-        filepath
+  async addImage(url) {
+    if (url && String(url).match(/^https:\/\/.*\/.*\.jpg|png|svg|jpeg($|\?)/i)) {
+      const { images, regex, store, imageDirectory, cloud } = this
+      const filename = file.getFilename(url, regex)
+      const id = store.makeUid(filename)
+      const filepath = file.getFullPath(imageDirectory, filename)
+
+      if (!images[id]) {
+        if (cloud) {
+          if (!cloud.isMatch(url)) return null
+          try {
+            console.log(filename)
+            const path = cloud.getPath(url)
+            const imageUri = await imageDataURI.encodeFromURL(cloud.toUrl(path, cloud.uri))
+            const meta = await probe(cloud.toUrl(path))
+
+            const srcset = []
+            cloud.sizes.forEach(size => {
+              if (size < meta.width) {
+                let url = cloud.toUrl(path, `c_limit,q_auto:best,w_${size}`)
+                srcset.push(`${url} ${size}w`)
+              }
+            })
+
+            const src = cloud.toUrl(path, `c_limit,q_auto:best,w_${meta.width}`)
+            srcset.push(`${url} ${meta.width}w`)
+
+            images[id] = {
+              src,
+              srcset,
+              dataUri: `data:image/svg+xml,<svg fill='none' viewBox='0 0 800 800' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink'><defs><filter id='__svg-blur'><feGaussianBlur in='SourceGraphic' stdDeviation='30'/></filter></defs><image x='0' y='0' filter='url(%23__svg-blur)' width='800' height='800' xlink:href='${imageUri}' /></svg>`,
+              size: {
+                width: meta.width,
+                height: meta.height
+              }
+            }
+          } catch(err) {
+            console.warn(err)
+            return null
+          }
+        } else {
+          images[id] = {
+            filename,
+            url,
+            filepath
+          }
+          this.loadImages = true
+        }
       }
 
-      this.loadImages = true
-
-      return filepath
+      return images[id].filepath ? images[id].filepath : images[id]
     }
     return null
   }
@@ -219,7 +284,8 @@ class MySQLSource {
     let exists = 0
     const download = []
     Object.keys(this.images).forEach(async (id) => {
-      const { filename, filepath } = this.images[id]
+      const { src, filename, filepath } = this.images[id]
+      if (src) return
 
       if (!file.exists(filepath)) {
         download.push(this.images[id])

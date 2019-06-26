@@ -23,7 +23,9 @@
   },
   "homepage": "https://github.com/u12206050/gridsome-source-mysql#readme",
   "dependencies": {
+    "image-data-uri": "^2.0.0",
     "mysql": "^2.17.1",
-    "p-map": "^2.1.0"
+    "p-map": "^2.1.0",
+    "probe-image-size": "^4.0.0"
   }
 }
