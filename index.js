@@ -82,14 +82,18 @@ class MySQLSource {
     api.loadSource(async (store) => {
       this.store = store
 
+      let res;
       if (!opts.ignoreImages) {
         this.images = {}
         if (opt.jsonId) {
           try {
-            const res = await axios.get(`https://www.jsonstore.io/${opt.jsonId}`
-            this.images = res.ok ? res.result : {}
+            res = await axios.get(`https://www.jsonstore.io/${opt.jsonId}`)
+            console.log('Loaded from jsonstore')
+            this.images = res.ok ? res.result || {} : {}
           } catch(error) {
             this.images = {}
+            console.log('Error loading from jsonstore')
+            console.log(error.message)
           }
         }
       }
@@ -104,7 +108,13 @@ class MySQLSource {
       if (this.images) {
         if (this.loadImages) await this.downloadImages()
         if (opt.jsonId) {
-          await axios.put(`https://www.jsonstore.io/${opt.jsonId}`, this.images)
+          try {
+            res = await axios.put(`https://www.jsonstore.io/${opt.jsonId}`, this.images)
+            if (res && res.ok) console.log('Saved to jsonstore')
+          } catch(error) {
+            console.log('Error saving to jsonstore')
+            console.log(error.message)
+          }
         }
       }
     })
