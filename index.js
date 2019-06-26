@@ -315,6 +315,7 @@ class MySQLSource {
         if (cloud) {
           if (!cloud.isMatch(url)) return null
           const path = cloud.getPath(url)
+          const src = cloud.toUrl(path, `f_auto`)
           try {
             const meta = await probe(cloud.toUrl(path))
             const imageUri = await imageDataURI.encodeFromURL(cloud.toUrl(path, cloud.uri), {
@@ -328,7 +329,6 @@ class MySQLSource {
               }
             })
 
-            const src = cloud.toUrl(path, `f_auto,c_limit,q_auto:best,w_${meta.width}`)
             srcset.push(`${src} ${meta.width}w`)
 
             images[id] = {
@@ -342,7 +342,7 @@ class MySQLSource {
               }
             }
           } catch(err) {
-            console.warn(`Failed loading ${path}`)
+            console.warn(`Failed loading ${src}`)
             return null
           }
         } else {
