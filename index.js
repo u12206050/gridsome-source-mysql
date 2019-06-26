@@ -92,8 +92,12 @@ class MySQLSource {
             if (res && res.ok && res.result && res.result.chunks > 0) {
               let loaded = 0
               console.log(`Loading ${res.result.chunks} chunks`)
+              q = []
+              while (loaded < res.result.chunks) q.push(loaded++)
+              loaded = 0
 
-              await pMap(new Array(res.result.chunks), async (e,i) => {
+              await pMap(q, async (i) => {
+                console.log(i)
                 let resp = await axios.get(`https://www.jsonstore.io/${opts.jsonId}-${i}`)
                 resp = resp.data
                 if (resp && resp.ok) {
@@ -104,7 +108,8 @@ class MySQLSource {
                     }
                   })
                 }
-              }, { concurrency: 1 })
+              }, { concurrency: 2 })
+
               console.log(`Loaded ${loaded} images from jsonstore`)
             } else {
               console.log(`No chunks from jsonstore`)
@@ -309,8 +314,8 @@ class MySQLSource {
       if (!images[id]) {
         if (cloud) {
           if (!cloud.isMatch(url)) return null
+          const path = cloud.getPath(url)
           try {
-            const path = cloud.getPath(url)
             const meta = await probe(cloud.toUrl(path))
             const imageUri = await imageDataURI.encodeFromURL(cloud.toUrl(path, cloud.uri), {
               timeout: 20000
@@ -337,7 +342,7 @@ class MySQLSource {
               }
             }
           } catch(err) {
-            console.warn(err)
+            console.warn(`Failed loading ${path}`)
             return null
           }
         } else {
