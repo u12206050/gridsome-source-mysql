@@ -82,14 +82,37 @@ class MySQLSource {
     api.loadSource(async (store) => {
       this.store = store
 
-      let res;
+      let res, q;
       if (!opts.ignoreImages) {
         this.images = {}
         if (opts.jsonId) {
           try {
             res = await axios.get(`https://www.jsonstore.io/${opts.jsonId}`)
-            console.log('Loaded from jsonstore')
-            this.images = res.ok ? res.result || {} : {}
+            res = res.data
+            if (res && res.ok && res.result && res.result.chunks) {
+              let loaded = 0
+              console.log(`Loading ${res.result.chunks} chunks`)
+              q = []
+              for(let i = 0; i < res.result.chunks; i++) {
+                q.push(i)
+              }
+
+              await pMap(q, async (i) => {
+                let resp = await axios.get(`https://www.jsonstore.io/${opts.jsonId}-${i}`)
+                resp = resp.data
+                if (resp && resp.ok) {
+                  Object.keys(resp.result).forEach(id => {
+                    if (typeof resp.result[id] === 'object') {
+                      this.images[id] = resp.result[id]
+                      loaded++
+                    }
+                  })
+                }
+              }, { concurrency: 1 })
+              console.log(`Loaded ${loaded} images from jsonstore`)
+            } else {
+              console.log(`No chunks from jsonstore`)
+            }
           } catch(error) {
             this.images = {}
             console.log('Error loading from jsonstore')
@@ -109,8 +132,38 @@ class MySQLSource {
         if (this.loadImages) await this.downloadImages()
         if (opts.jsonId) {
           try {
-            res = await axios.put(`https://www.jsonstore.io/${opts.jsonId}`, this.images)
-            if (res && res.ok) console.log('Saved to jsonstore')
+            const ids = Object.keys(this.images)
+            console.log(`Chunking ${ids.length}`)
+
+            let chunk = {}
+            const chunkSize = 30
+            let size = chunkSize
+
+            q = []
+            ids.forEach(id => {
+              if (size--) {
+                chunk[id] = this.images[id]
+              } else {
+                q.push(chunk)
+                size = chunkSize
+                chunk = {}
+              }
+            })
+
+            if (size !== chunkSize) {
+              q.push(chunk)
+            }
+
+            await pMap(q, async (c,i) => {
+              try {
+                await axios.put(`https://www.jsonstore.io/${opts.jsonId}-${i}`, c)
+              } catch (error) {
+                console.log(`Failed saving to jsonstore #${i}`)
+                console.log(error.message)
+              }
+            }, { concurrency: 1 })
+            console.log(`Saved ${q.length} chunks to jsonstore`)
+
           } catch(error) {
             console.log('Error saving to jsonstore')
             console.log(error.message)
@@ -255,12 +308,11 @@ class MySQLSource {
         if (cloud) {
           if (!cloud.isMatch(url)) return null
           try {
-            console.log(filename)
             const path = cloud.getPath(url)
+            const meta = await probe(cloud.toUrl(path))
             const imageUri = await imageDataURI.encodeFromURL(cloud.toUrl(path, cloud.uri), {
               timeout: 20000
             })
-            const meta = await probe(cloud.toUrl(path))
 
             const srcset = []
             cloud.sizes.forEach(size => {
@@ -275,6 +327,7 @@ class MySQLSource {
             images[id] = {
               src,
               srcset,
+              name: filename,
               dataUri: `data:image/svg+xml,<svg fill='none' viewBox='0 0 800 800' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink'><defs><filter id='__svg-blur'><feGaussianBlur in='SourceGraphic' stdDeviation='30'/></filter></defs><image x='0' y='0' filter='url(%23__svg-blur)' width='800' height='800' xlink:href='${imageUri}' /></svg>`,
               size: {
                 width: meta.width,
