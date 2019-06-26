@@ -26,13 +26,6 @@ class MySQLSource {
       imageDirectory: 'sql_images',
       regex: false,
       queries: [],
-      cloudinary: {
-        name: 'dprtlkeil',
-        folder: 'media',
-        uri: 'c_scale,e_vectorize,w_50',
-        sizes: ['1920', '1024', '480'],
-        match: /https?:\/\/www\.tilboligen\.no\/media\//
-      },
       connection: {
         host: 'localhost',
         port: 3306,
