@@ -190,9 +190,7 @@ class MySQLSource {
             } else {
               row[imgField] = await this.addImage(row[imgField])
             }
-          }, {
-            concurrency: cpus
-          })
+          }, { concurrency: 3 })
         }
 
         /* Check for relationships */
@@ -229,7 +227,9 @@ class MySQLSource {
           try {
             console.log(filename)
             const path = cloud.getPath(url)
-            const imageUri = await imageDataURI.encodeFromURL(cloud.toUrl(path, cloud.uri))
+            const imageUri = await imageDataURI.encodeFromURL(cloud.toUrl(path, cloud.uri), {
+              timeout: 20000
+            })
             const meta = await probe(cloud.toUrl(path))
 
             const srcset = []
