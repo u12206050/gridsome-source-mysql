@@ -1,3 +1,5 @@
+1.4.10 Removed support for GIF, since it breaks when trying to optimize
+
 1.4.7 Added regex option to clean up image file names
 
   * Useful for removing duplicate images that are the same.

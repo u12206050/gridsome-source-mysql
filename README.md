@@ -10,6 +10,8 @@ Gridsome Source Plugin to load data directly from MySQL Database
 
   * Supports sub queries and references between content types
 
+  * `id` field from mysql is renamed to `mysqlId`
+
   * Content type references via `xxx_id`(single id) and `xxx_ids`(comma delimited ids)
 
 
@@ -18,6 +20,7 @@ View the [changelog](https://github.com/u12206050/gridsome-source-mysql/blob/mas
 ### Latest Updates
 
   *v1.4.7* Added regex option to clean up image file names
+
   *v1.4.5* Support for dynamic routes added
 
 ## Install
@@ -49,7 +52,7 @@ module.exports = {
         debug: true, // Default false on production
         ignoreImages: false, // Do not download any images
         imageDirectory: 'sql_images',
-        regex: /()_\d(.(jpg|png|svg|gif|jpeg))/i, // Default false
+        regex: /()_\d(.(jpg|png|svg|jpeg))/i, // Default false
         queries: [ // required
           {
             name: 'Author',
@@ -106,7 +109,7 @@ query {
 
 ### Options
 
-  *regex*: Specify false to not use or a `regex` expression that has 2 capture groups. This can be used to remove duplicate files for example the value `/()_\d(.(jpg|png|svg|gif|jpeg))/i` renames all files that end with `_\d` eg. `_1`, `_2`; since we assume them to be duplicate files. We DO NOT change the source url since it might be the original file (not ending with `_\d`) isn't used.
+  *regex*: Specify false to not use or a `regex` expression that has 2 capture groups. This can be used to remove duplicate files for example the value `/()_\d(.(jpg|png|svg|jpeg))/i` renames all files that end with `_\d` eg. `_1`, `_2`; since we assume them to be duplicate files. We DO NOT change the source url since it might be the original file (not ending with `_\d`) isn't used.
 
 ### Query
 

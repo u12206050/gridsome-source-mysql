@@ -7,7 +7,7 @@ const images = {}
 let loadImages = false
 
 // Somewhere on each possible image url
-if (url && String(url).match(/^https:\/\/.*\/.*\.(jpg|png|svg|gif|jpeg)($|\?)/i)) {
+if (url && String(url).match(/^https:\/\/.*\/.*\.(jpg|png|svg|jpeg)($|\?)/i)) {
   const filename = file.getFilename(url)
   const id = makeUid(url)
   const filepath = file.getFullPath(imageDirectory, filename)
