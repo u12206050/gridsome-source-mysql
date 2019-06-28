@@ -334,6 +334,7 @@ class MySQLSource {
             images[id] = {
               src,
               srcset,
+              sizes: `(max-width: ${meta.width}w) 100vw, ${meta.width}w`,
               name: filename,
               dataUri: `data:image/svg+xml,<svg fill='none' viewBox='0 0 800 800' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink'><defs><filter id='__svg-blur'><feGaussianBlur in='SourceGraphic' stdDeviation='30'/></filter></defs><image x='0' y='0' filter='url(%23__svg-blur)' width='800' height='800' xlink:href='${imageUri}' /></svg>`,
               size: {
