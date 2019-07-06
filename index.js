@@ -29,6 +29,7 @@ class MySQLSource {
       regex: false,
       queries: [],
       jsonId: false,
+      jsonChunkSize: 20,
       connection: {
         host: 'localhost',
         port: 3306,
@@ -137,7 +138,7 @@ class MySQLSource {
             console.log(`Chunking ${ids.length}`)
 
             let chunk = {}
-            const chunkSize = 30
+            const chunkSize = opts.jsonChunkSize > 30 ? 30 : opts.jsonChunkSize
             let size = chunkSize
 
             q = []
