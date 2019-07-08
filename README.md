@@ -1,5 +1,7 @@
 # Gridsome source MySQL
 
+**Alternate version with image cdn support using [cloudinary](https://cloudinary.com/invites/lpov9zyyucivvxsnalc5/n4iiwbfiyryrdnlqkrye) and [jsonstore.io](https://jsonstore.io)**
+
 Gridsome Source Plugin to load data directly from MySQL Database
 
   * If you don't succeed through a CMS, bypass it and load the data directly from the MySQL Database
@@ -25,11 +27,23 @@ View the [changelog](https://github.com/u12206050/gridsome-source-mysql/blob/mas
 
 ## Install
 
-  `npm install gridsome-source-mysql --save`
+  `npm install git://github.com/u12206050/gridsome-source-mysql.git#cloudinary --save`
 
 ## Setup
 
 > Make sure your mysql database is accessible everywhere you are planning to build your site from.
+
+### Cloudinary (for images)
+
+Create a FREE account on [cloudinary](https://cloudinary.com/invites/lpov9zyyucivvxsnalc5/n4iiwbfiyryrdnlqkrye) and then enable auto uploading by doing the following:
+
+  1. Navigate to [settings > upload](https://cloudinary.com/console/settings/upload)
+  2. Then under `Auto upload mapping` in the `Folder` field add the name of the directory where all your images are. They may be in subdirectories as well. eg. `media`
+  3. Add the the full url that includes the folder name in the `URL prefix` field eg. `https://example.no/media/`
+  4. In the config (see below) update the `name`, `folder` and `match` fields.
+  5. Update all your queries where you query for images to include the srcset and other required fields. (See example **Usage** below)
+
+### Config
 
 Within plugins in the `gridsome-config.js` file, add the connection settings and queries for the data you need.
 
@@ -50,8 +64,15 @@ module.exports = {
           connectionLimit : 10
         },
         debug: true, // Default false on production
-        ignoreImages: false, // Do not download any images
-        imageDirectory: 'sql_images',
+        ignoreImages: false, // Do not process any images
+        jsonId: process.env.JSON_STORE, // Get an id from jsonstore.io
+        cloudinary: {
+          name: 'example',
+          folder: 'media',
+          uri: 'c_scale,e_vectorize,w_50', // Scaling for svg placeholder
+          sizes: ['480', '800'],
+          match: /https?:\/\/(www\.)?example\.no\/media\// // Url to match for images and swap out for the cloudinary url
+        },
         regex: /()_\d(.(jpg|png|svg|jpeg))/i, // Default false
         queries: [ // required
           {
@@ -88,16 +109,40 @@ query {
       node {
         title
         path
-        image (width: 600, height: 600)
+        image {
+          src
+          dataUri
+          srcset
+          size {
+            width
+            height
+          }
+        }
         gallery {
           index
-          image (width: 400, height: 400)
+          image {
+            src
+            dataUri
+            srcset
+            size {
+              width
+              height
+            }
+          }
         }
         excerpt
         author {
           fullname
           url
-          avatar (width: 100, height: 100)
+          image {
+            src
+            dataUri
+            srcset
+            size {
+              width
+              height
+            }
+          }
         }
       }
     }
