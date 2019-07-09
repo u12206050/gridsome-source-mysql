@@ -16,10 +16,14 @@ Gridsome Source Plugin to load data directly from MySQL Database
 
   * Content type references via `xxx_id`(single id) and `xxx_ids`(comma delimited ids)
 
+  * Cloudinary images also have placeholders which will be generated and saved to jsonstore for future builds.
+
 
 View the [changelog](https://github.com/u12206050/gridsome-source-mysql/blob/master/CHANGELOG.md) for any possible changes from previous versions.
 
 ### Latest Updates
+
+  *2.0.0* Alternate version including cloudinary
 
   *v1.4.7* Added regex option to clean up image file names
 
@@ -27,7 +31,7 @@ View the [changelog](https://github.com/u12206050/gridsome-source-mysql/blob/mas
 
 ## Install
 
-  `npm install git://github.com/u12206050/gridsome-source-mysql.git#cloudinary --save`
+  `npm install gridsome-source-mysql-cloudinary --save`
 
 ## Setup
 
@@ -53,7 +57,7 @@ Within plugins in the `gridsome-config.js` file, add the connection settings and
 module.exports = {
   plugins: [
     {
-      use: 'gridsome-source-mysql',
+      use: 'gridsome-source-mysql-cloudinary',
       options: {
         connection: {
           host: 'localhost', // required
