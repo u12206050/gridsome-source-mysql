@@ -1,3 +1,9 @@
+2.5.0 Support for parsing json
+
+  * Version bump to match mysql-plugin
+
+  * Support callback function in images.
+
 2.0.0 Alternate version including cloudinary
 
   * Store images on cloudinary with support for placeholders and dynamic resizing etc.

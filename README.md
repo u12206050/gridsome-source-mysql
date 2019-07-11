@@ -23,6 +23,8 @@ View the [changelog](https://github.com/u12206050/gridsome-source-mysql/blob/mas
 
 ### Latest Updates
 
+  *2.5.0* Support JSON parsing via the `json` options
+
   *2.0.0* Alternate version including cloudinary
 
   *v1.4.7* Added regex option to clean up image file names
@@ -172,7 +174,8 @@ path | string | Name of a field on each row to slugify and use as path
 sql | string | A SQL Query with optional placeholders `?` which will be replaced by args in order
 args? | array<string> | Simple array of static values
 args? | function(parentRow?): array<string> | Return array of values based on data from the parentRow or dynamic calculated data, eg. [Date.now()]
-images? | array<string|string[]> | Names of fields on rows that contain urls of images to download and optimize via Gridsome
+json | array<string> | Names of fields containing json to be converted to objects else `null`
+images? | array<string|string[]|function(row, addImageUrl(url: string))> | Names of fields on rows that contain urls of images to download and optimize via Gridsome
 subs | array<Query> | Array of Query to execute per result of the current query
 
 # MySQL Query Examples

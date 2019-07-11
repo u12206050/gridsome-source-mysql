@@ -268,9 +268,23 @@ class MySQLSource {
         if (parentQuery && parentRow)
           row._parent = createReference(parentQuery.name, parentRow.id)
 
+        /* Parse JSON fields */
+        if (Array.isArray(Q.json)) {
+          Q.json.forEach(jsonField => {
+            try {
+              row[jsonField] = JSON.parse(row[jsonField])
+            } catch (e) {
+              row[jsonField] = null
+            }
+          })
+        }
+
         /* Check for images */
         if (this.images && Array.isArray(Q.images)) {
           await pMap(Q.images, async imgField => {
+            if (typeof imgField === 'function') {
+              await imgField(row, (url) => this.addImage(url))
+            }
             if (Array.isArray(imgField)) {
               if (imgField.length !== 1) throw new Error('MySQL query image array should contain exactly 1 field')
               const imageUrls = String(row[imgField[0]]).split(',')
