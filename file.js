@@ -56,12 +56,11 @@ const https = require('https')
 const fs = require('fs')
 const path = require('path')
 
-const ROOT = process.cwd()
 const TMPDIR = '.temp/downloads'
 let tmpCount = 0
 
 function createDirectory(dir) {
-  const pwd = path.join(ROOT, dir)
+  const pwd = path.resolve(dir)
   if (!fs.existsSync(pwd)) fs.mkdirSync(pwd)
 
   return pwd
@@ -70,7 +69,7 @@ function createDirectory(dir) {
 createDirectory(TMPDIR)
 
 function getFullPath(dir, filename) {
-  return path.join(ROOT, dir, filename)
+  return path.resolve(dir, filename)
 }
 
 function getFilename(url, regex) {
