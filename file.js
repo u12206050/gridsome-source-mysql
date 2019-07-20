@@ -81,7 +81,13 @@ function exists(filepath) {
   return fs.existsSync(filepath)
 }
 
-function download(url, path) {
+function downloadIfNotExists(url, absPath) {
+  if (!url ||  !path || exists(absPath)) return
+
+  return download(url, absPath)
+}
+
+function download(url, absPath) {
   return new Promise(function(resolve) {
     const tmpPath = getFullPath(TMPDIR, `${++tmpCount}.tmp`)
     const file = fs.createWriteStream(tmpPath)
@@ -89,7 +95,7 @@ function download(url, path) {
       response.pipe(file)
       file.on('finish', () => {
         file.close()
-        fs.rename(tmpPath, path, resolve)
+        fs.rename(tmpPath, absPath, resolve)
       })
     }).on('error', (err) => {
       console.error(err.message)
