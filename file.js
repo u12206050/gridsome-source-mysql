@@ -57,6 +57,7 @@ const fs = require('fs')
 const path = require('path')
 
 const ROOT = process.cwd()
+let tmpCount = 0
 
 function createDirectory(dir) {
   const pwd = path.join(ROOT, dir)
@@ -80,15 +81,17 @@ function exists(filepath) {
 
 function download(url, path) {
   return new Promise(function(resolve) {
-    const file = fs.createWriteStream(path)
+    const tmpPath = path.join(createDirectory('.temp'), ++tmpCount++)
+    const file = fs.createWriteStream(tmpPath)
     const request = https.get(url, (response) => {
       response.pipe(file)
       file.on('finish', () => {
-        file.close(resolve)
+        file.close()
+        fs.rename(oldPath, path, resolve)
       })
     }).on('error', (err) => {
       console.error(err.message)
-      fs.unlink(String(path), resolve)
+      fs.unlink(String(tmpPath), resolve)
     })
   })
 }
