@@ -57,6 +57,8 @@ const fs = require('fs')
 const path = require('path')
 
 const ROOT = process.cwd()
+const TMPDIR = '.temp/downloads'
+let tmpCount = 0
 
 function createDirectory(dir) {
   const pwd = path.join(ROOT, dir)
@@ -64,6 +66,8 @@ function createDirectory(dir) {
 
   return pwd
 }
+
+createDirectory(TMPDIR)
 
 function getFullPath(dir, filename) {
   return path.join(ROOT, dir, filename)
@@ -80,15 +84,17 @@ function exists(filepath) {
 
 function download(url, path) {
   return new Promise(function(resolve) {
-    const file = fs.createWriteStream(path)
+    const tmpPath = getFullPath(TMPDIR, `${++tmpCount}.tmp`)
+    const file = fs.createWriteStream(tmpPath)
     const request = https.get(url, (response) => {
       response.pipe(file)
       file.on('finish', () => {
-        file.close(resolve)
+        file.close()
+        fs.rename(tmpPath, path, resolve)
       })
     }).on('error', (err) => {
       console.error(err.message)
-      fs.unlink(String(path), resolve)
+      fs.unlink(String(tmpPath), resolve)
     })
   })
 }
