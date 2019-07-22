@@ -1,6 +1,6 @@
 {
   "name": "gridsome-source-mysql-cloudinary",
-  "version": "2.5.1",
+  "version": "2.5.2",
   "description": "Gridsome Source Plugin to load data directly from MySQL Database, with support for cloudinary",
   "main": "index.js",
   "scripts": {
@@ -26,6 +26,7 @@
   "homepage": "https://github.com/u12206050/gridsome-source-mysql#readme",
   "dependencies": {
     "axios": "^0.19.0",
+    "fs-extra": "^8.1.0",
     "image-data-uri": "^2.0.0",
     "mysql": "^2.17.1",
     "p-map": "^2.1.0",
