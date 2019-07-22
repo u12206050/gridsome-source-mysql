@@ -61,7 +61,7 @@ let tmpCount = 0
 
 function createDirectory(dir) {
   const pwd = path.resolve(dir)
-  if (!fs.existsSync(pwd)) fs.mkdirSync(pwd)
+  if (!fs.existsSync(pwd)) fs.mkdirs(pwd)
 
   return pwd
 }
