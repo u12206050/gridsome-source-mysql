@@ -23,6 +23,8 @@ View the [changelog](https://github.com/u12206050/gridsome-source-mysql/blob/mas
 
 ### Latest Updates
 
+  *2.6.0* Added optimsed for cloudinary g-image
+
   *2.5.0* Support JSON parsing via the `json` options
 
   *2.0.0* Alternate version including cloudinary
@@ -48,6 +50,23 @@ Create a FREE account on [cloudinary](https://cloudinary.com/invites/lpov9zyyuci
   3. Add the the full url that includes the folder name in the `URL prefix` field eg. `https://example.no/media/`
   4. In the config (see below) update the `name`, `folder` and `match` fields.
   5. Update all your queries where you query for images to include the srcset and other required fields. (See example **Usage** below)
+
+### Use the optimized CloudinaryImage as `g-image`
+
+In `main.js` import and override Gridsome's image component with CloudinaryImage. As a drop-in-replacement we will call it `g-image` so your code does not need to be updated.
+
+```
+// main.js
+
+import CloudinaryImage from 'gridsome-source-mysql-cloudinary/CloudinaryImage'
+
+export default function(Vue) {
+
+  /* Drop-in-replacement for Gridsome's image */
+  Vue.component('g-image', CloudinaryImage)
+
+}
+```
 
 ### Config
 
@@ -238,3 +257,10 @@ In the above example `cats.category_ids` will result in an array of `Category` c
 Images in this database were relative, so in order for them to be downloaded they need to be concatenated with the site origin.
 
 In the `Category` query, we change the `parent_id` to output as `category_id` since we want it to be linked to another `Category` automatically.
+
+
+### The drop-in-replacement, CloudinaryImage
+
+This drop-in version will filter through the appropriate sizes available, eg. `sizes: ['480', '800', '1200']`, on each image, such that even though larger images exist it will only use the image that is `>= width`, width being speicified on the tag.
+
+Example: `<g-image :src="image" width="600">` here the image with the generated size of `800` will be used, and not `1200`.

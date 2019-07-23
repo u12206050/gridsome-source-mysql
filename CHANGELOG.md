@@ -1,3 +1,7 @@
+2.6.0 Added optimsed for cloudinary g-image
+
+  * Component to replace Gridsome's image in order to better use images from Cloudinary
+
 2.5.0 Support for parsing json
 
   * Version bump to match mysql-plugin
