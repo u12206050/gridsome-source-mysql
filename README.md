@@ -1,6 +1,6 @@
 # Gridsome source MySQL
 
-**Alternate version with image cdn support using [cloudinary](https://cloudinary.com/invites/lpov9zyyucivvxsnalc5/n4iiwbfiyryrdnlqkrye) and [jsonstore.io](https://jsonstore.io)**
+**Alternate version with image cdn support using [cloudinary](https://cloudinary.com/invites/lpov9zyyucivvxsnalc5/n4iiwbfiyryrdnlqkrye) and [jsonbin.io](https://jsonbin.io)**
 
 Gridsome Source Plugin to load data directly from MySQL Database
 
@@ -23,15 +23,9 @@ View the [changelog](https://github.com/u12206050/gridsome-source-mysql/blob/mas
 
 ### Latest Updates
 
+  *2.7.0* BREAKING CHANGE: Switched from jsonstore to jsonbin
+
   *2.6.0* Added optimsed for cloudinary g-image
-
-  *2.5.0* Support JSON parsing via the `json` options
-
-  *2.0.0* Alternate version including cloudinary
-
-  *v1.4.7* Added regex option to clean up image file names
-
-  *v1.4.5* Support for dynamic routes added
 
 ## Install
 
@@ -68,6 +62,11 @@ export default function(Vue) {
 }
 ```
 
+### [Jsonbin](https://jsonbin.io)
+
+Create a free account which should be enough transactions if you aren't building too often with too many images.
+Update the config as specified below with you jsonbin key, binId (which you create before hand), and optional collectionId to group all your image bins.
+
 ### Config
 
 Within plugins in the `gridsome-config.js` file, add the connection settings and queries for the data you need.
@@ -90,7 +89,11 @@ module.exports = {
         },
         debug: true, // Default false on production
         ignoreImages: false, // Do not process any images
-        jsonId: process.env.JSON_STORE, // Get an id from jsonstore.io
+        jsonbin: { // Create a free account on [jsonbin.io](https://jsonbin.io)
+          key: process.env.JSONBIN_KEY, // Secret key from [jsonbin.io](https://jsonbin.io/api-keys)
+          binId: process.env.JSONBIN_BIN, // The id of the bin to save data too
+          collectionId: process.env.JSONBIN_COLLECTION, // (optional) The id of the collection in which to save additional bins
+        },
         cloudinary: {
           name: 'example',
           folder: 'media',

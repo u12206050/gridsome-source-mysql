@@ -80,47 +80,29 @@ class MySQLSource {
       }
     }
 
+    /* SETUP JSONBin Axios connection */
+    const jsonbin = (() => {
+      if (!opts.jsonbin || !opts.jsonbin.key) return false
+      const options = {
+        baseURL: 'https://api.jsonbin.io/b/',
+        headers: {
+          'secret-key': opts.jsonbin.key,
+          'collection-id': opts.jsonbin.collectionId,
+          versioning: false
+        }
+      }
+      if (opts.jsonbin.collectionId) options['collection-id'] = opts.jsonbin.collectionId
+
+      return axios.create(options)
+    })()
+
     api.loadSource(async (store) => {
       this.store = store
 
-      let res, q;
+      let rdata, q, existingBinIds = [];
       if (!opts.ignoreImages) {
         this.images = {}
-        if (opts.jsonId) {
-          try {
-            res = await axios.get(`https://www.jsonstore.io/${opts.jsonId}`)
-            res = res.data
-            if (res && res.ok && res.result && res.result.chunks > 0) {
-              let loaded = 0
-              console.log(`Loading ${res.result.chunks} chunks`)
-              q = []
-              while (loaded < res.result.chunks) q.push(loaded++)
-              loaded = 0
-
-              await pMap(q, async (i) => {
-                console.log(i)
-                let resp = await axios.get(`https://www.jsonstore.io/${opts.jsonId}-${i}`)
-                resp = resp.data
-                if (resp && resp.ok) {
-                  Object.keys(resp.result).forEach(id => {
-                    if (typeof resp.result[id] === 'object') {
-                      this.images[id] = resp.result[id]
-                      loaded++
-                    }
-                  })
-                }
-              }, { concurrency: 2 })
-
-              console.log(`Loaded ${loaded} images from jsonstore`)
-            } else {
-              console.log(`No chunks from jsonstore`)
-            }
-          } catch(error) {
-            this.images = {}
-            console.log('Error loading from jsonstore')
-            console.log(error.message)
-          }
-        }
+        if (jsonbin) await this.loadImageCache(opts, jsonbin)
       }
 
       this.checkQNames(this.queries)
@@ -132,51 +114,7 @@ class MySQLSource {
 
       if (this.images) {
         if (this.loadImages) await this.downloadImages()
-        if (opts.jsonId) {
-          try {
-            const ids = Object.keys(this.images)
-            console.log(`Chunking ${ids.length}`)
-
-            let chunk = {}
-            const chunkSize = opts.jsonChunkSize > 30 ? 30 : opts.jsonChunkSize
-            let size = chunkSize
-
-            q = []
-            ids.forEach(id => {
-              if (size--) {
-                chunk[id] = this.images[id]
-              } else {
-                q.push(chunk)
-                size = chunkSize
-                chunk = {}
-              }
-            })
-
-            if (size !== chunkSize) {
-              q.push(chunk)
-            }
-
-            await pMap(q, async (c,i) => {
-              try {
-                await axios.put(`https://www.jsonstore.io/${opts.jsonId}-${i}`, c)
-              } catch (error) {
-                console.log(`Failed saving to jsonstore #${i}`)
-                console.log(error.message)
-              }
-            }, { concurrency: 1 })
-
-            res = await axios.put(`https://www.jsonstore.io/${opts.jsonId}`, {
-              chunks: q.length
-            })
-            if (res && res.data && res.data.ok)
-              console.log(`Saved ${q.length} chunks to jsonstore`)
-            else console.log(`Issue saving ${q.length} chunks to jsonstore`)
-
-          } catch(error) {
-            console.log('Error saving to jsonstore')
-            console.log(error.message)
-          }
-        }
+        if (jsonbin) await this.saveImageCache(opts, jsonbin)
       }
     })
   }
@@ -295,7 +233,7 @@ class MySQLSource {
             } else {
               row[imgField] = await this.addImage(row[imgField])
             }
-          }, { concurrency: 3 })
+          }, { concurrency: 2 })
         }
 
         /* Check for relationships */
@@ -323,46 +261,53 @@ class MySQLSource {
     if (url && String(url).match(/^https:\/\/.*\/.*\.jpg|png|svg|jpeg($|\?)/i)) {
       const { images, regex, store, imageDirectory, cloud } = this
       const filename = file.getFilename(url, regex)
-      const id = store.makeUid(filename)
+      const iId = store.makeUid(filename)
       const filepath = file.getFullPath(imageDirectory, filename)
 
-      if (!images[id]) {
+      if (!images[iId]) {
         if (cloud) {
           if (!cloud.isMatch(url)) return null
           const path = cloud.getPath(url)
           const src = cloud.toUrl(path, `f_auto`)
+
+          let meta, imageUri = null
           try {
-            const meta = await probe(cloud.toUrl(path))
-            const imageUri = await imageDataURI.encodeFromURL(cloud.toUrl(path, cloud.uri), {
-              timeout: 20000
-            })
-
-            const srcset = []
-            cloud.sizes.forEach(size => {
-              if (size < meta.width) {
-                srcset.push(`${cloud.toUrl(path, `f_auto,c_limit,q_auto:best,w_${size}`)} ${size}w`)
-              }
-            })
-
-            srcset.push(`${src} ${meta.width}w`)
-
-            images[id] = {
-              src,
-              srcset,
-              sizes: `(max-width: ${meta.width}w) 100vw, ${meta.width}w`,
-              name: filename,
-              dataUri: `data:image/svg+xml,<svg fill='none' viewBox='0 0 800 800' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink'><defs><filter id='__svg-blur'><feGaussianBlur in='SourceGraphic' stdDeviation='30'/></filter></defs><image x='0' y='0' filter='url(%23__svg-blur)' width='800' height='800' xlink:href='${imageUri}' /></svg>`,
-              size: {
-                width: meta.width,
-                height: meta.height
-              }
-            }
+            meta = await probe(cloud.toUrl(path), { retries: 4 })
           } catch(err) {
-            console.warn(`Failed loading ${src}`)
+            console.warn(`Failed loading meta for ${src}`)
             return null
           }
+          try {
+            imageUri = await imageDataURI.encodeFromURL(cloud.toUrl(path, cloud.uri), {
+              timeout: 20000
+            })
+          } catch(err) {
+            console.warn(`Failed loading image uri for ${src}`)
+            return null
+          }
+
+          const srcset = []
+          cloud.sizes.forEach(size => {
+            if (size < meta.width) {
+              srcset.push(`${cloud.toUrl(path, `f_auto,c_limit,q_auto:best,w_${size}`)} ${size}w`)
+            }
+          })
+
+          srcset.push(`${src} ${meta.width}w`)
+
+          images[iId] = {
+            src,
+            srcset,
+            sizes: `(max-width: ${meta.width}w) 100vw, ${meta.width}w`,
+            name: filename,
+            dataUri: `data:image/svg+xml,<svg fill='none' viewBox='0 0 800 800' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink'><defs><filter id='__svg-blur'><feGaussianBlur in='SourceGraphic' stdDeviation='30'/></filter></defs><image x='0' y='0' filter='url(%23__svg-blur)' width='800' height='800' xlink:href='${imageUri}' /></svg>`,
+            size: {
+              width: meta.width,
+              height: meta.height
+            }
+          }
         } else {
-          images[id] = {
+          images[iId] = {
             filename,
             url,
             filepath
@@ -371,22 +316,23 @@ class MySQLSource {
         }
       }
 
-      return images[id].filepath ? images[id].filepath : images[id]
+      return images[iId].filepath ? images[iId].filepath : images[iId]
     }
     return null
   }
 
   async downloadImages() {
-    file.createDirectory(this.imageDirectory)
+    const { images, imageDirectory } = this
+    file.createDirectory(imageDirectory)
 
     let exists = 0
     const download = []
-    Object.keys(this.images).forEach(async (id) => {
-      const { src, filename, filepath } = this.images[id]
+    Object.keys(images).forEach(async (iId) => {
+      const { src, filename, filepath } = images[iId]
       if (src) return
 
       if (!file.exists(filepath)) {
-        download.push(this.images[id])
+        download.push(images[iId])
       } else exists++
     })
 
@@ -413,6 +359,125 @@ class MySQLSource {
     }
 
     this.loadImages = false
+  }
+
+  async loadImageCache(opts, jsonbin) {
+    const { images } = this
+
+    try {
+      const binInfo = await jsonbin.get(opts.jsonbin.binId).then(res => res.data)
+      if (binInfo && binInfo.count && binInfo.binIds) {
+        this.existingBinIds = binInfo.binIds
+        console.log(`Loading ${this.existingBinIds.length} chunks containg ${binInfo.count} images`)
+
+        let loaded = 0
+        await pMap(this.existingBinIds, async (bId, i) => {
+          const binImages = await jsonbin.get(bId).then(res => res.data)
+          Object.keys(binImages).forEach(iId => {
+            if (typeof binImages[iId] === 'object') {
+              images[iId] = binImages[iId]
+              loaded++
+            }
+          })
+        }, { concurrency: 4 })
+
+        try {
+          this.checksum = JSON.stringify(images).length
+        } catch(err) {
+          console.log('Failed creating checksum')
+        }
+
+        console.log(`Loaded ${loaded} images from jsonbin`)
+      } else {
+        console.log(`No images from jsonbin or invalid bin id`)
+      }
+    } catch(err) {
+      this.images = {}
+      console.log('Error loading from jsonbin')
+      console.log(err.message)
+    }
+  }
+
+  async saveImageCache(opts, jsonbin) {
+    const { images, checksum, existingBinIds } = this
+    try {
+      if (checksum > 10 && checksum === JSON.stringify(images).length) {
+        console.log('Checksum passed, no need to update image cache')
+        return
+      }
+    } catch(err) {
+      console.log('Failed checking checksum')
+    }
+
+    try {
+      const iIds = Object.keys(images)
+      const count = iIds.length
+
+      const chunks = []
+      let chunk = {}
+      const chunkSize = 60
+      let size = chunkSize
+
+      iIds.forEach(iId => {
+        if (size--) {
+          chunk[iId] = this.images[iId]
+        } else {
+          chunks.push(chunk)
+          size = chunkSize
+          chunk = {}
+        }
+      })
+
+      console.log(`Chunking and saving ${count} images`)
+
+      if (size !== chunkSize) {
+        chunks.push(chunk)
+      }
+
+      const usedBinIds = []
+      await pMap(chunks, async (chunk, cI) => {
+        let bId = existingBinIds.pop()
+        if (bId) {
+          return jsonbin.put(bId, chunk).then(res => {
+            usedBinIds.push(bId)
+            console.log(`${cI} Updated bin`)
+            return cI
+          }).catch((err) => {
+            console.log(`${cI} failed: ${err.message}`)
+          })
+        } else {
+          return jsonbin.post('', chunk).then(res => {
+            usedBinIds.push(res.data.id)
+            console.log(`${cI} Created new bin`)
+            return jsonbin.put(opts.jsonbin.binId, {
+              binIds: usedBinIds,
+              count
+            })
+          }).catch((err) => {
+            console.log(`${cI} failed: ${err.message}`)
+          })
+        }
+      }, { concurrency: 4 })
+
+      await jsonbin.put(opts.jsonbin.binId, {
+        binIds: usedBinIds,
+        count
+      })
+
+      /* Cleanup */
+      await Promise.all(existingBinIds.map((bId) => jsonbin.delete(bId).then((res) => {
+        console.log(`Deleted ${bId}`)
+        return res.data
+      }))).catch(() => {
+        console.log("Don't panic :) FYI, I tried to delete unused bins but failed. But otherwise I have ")
+      })
+
+      console.log(`Saved ${count} images thumbnails to jsonbin`)
+
+    } catch(error) {
+      console.log('Error saving to jsonbin')
+      console.log(error.message)
+    }
   }
 }
 

@@ -1,3 +1,6 @@
+2.7.0 [BREAKING] Changed from jsonstore to jsonbin.io format
+  * Requires creating free account with jsonbin.io and updating parameters.
+
 2.6.0 Added optimsed for cloudinary g-image
 
   * Component to replace Gridsome's image in order to better use images from Cloudinary
