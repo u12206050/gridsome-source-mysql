@@ -146,7 +146,7 @@ class MySQLSource {
         }
       }
 
-      return Promise.all(rows.map((row, i) => {
+      return Promise.all(rows.map(async (row, i) => {
         row.mysqlId = row.id
         row.id = makeUid(`${Q.name}–${row.id}`)
         row.path = PathFn(slugify, row, parentRow)
