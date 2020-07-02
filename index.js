@@ -81,13 +81,14 @@ class MySQLSource {
   }
 
   async fetchQueries(queries, parentQuery, parentRow) {
-    const { slugify, addContentType, makeUid, createReference } = this.store
+    const { slugify, addContentType, addCollection, makeUid, createReference } = this.store
+    const addAction = typeof (addCollection === 'function') ? addCollection : addContentType
 
     await Promise.all(queries.map(async (Q) => {
       const args = (typeof Q.args === 'function' ? Q.args(parentRow) : Q.args) || null
       const sql = mysql.format(Q.sql, args)
 
-      const cType = this.cTypes[Q.name] = addContentType({
+      const cType = this.cTypes[Q.name] = addAction({
         typeName: Q.name,
         route: Q.route
       })
